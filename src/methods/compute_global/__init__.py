@@ -58,7 +58,7 @@ def compute_ptb_classification(model, dataset, sigma=0.2, batch_size=128):
         batch = dataset_tensor[start_idx:end_idx]
         batch_size_actual = end_idx - start_idx
 
-        # Dự đoán ban đầu
+        # Initial prediction
         predictions = model(batch)
         predicted_classes = tf.argmax(predictions, axis=1)
         P0 = tf.gather(predictions, predicted_classes, axis=1, batch_dims=1) 

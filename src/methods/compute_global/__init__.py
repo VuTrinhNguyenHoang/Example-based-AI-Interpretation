@@ -15,7 +15,7 @@ def compute_sens(model, dataset, batch_size=128):
         batch = dataset_tensor[start_idx:end_idx]
         batch_size_actual = end_idx - start_idx
         
-        # Dự đoán ban đầu (P^0)
+        # Initial prediction (P^0)
         predictions = model(batch)
         predicted_classes = tf.argmax(predictions, axis=1)
         P0 = tf.gather(predictions, predicted_classes, axis=1, batch_dims=1)
@@ -75,7 +75,7 @@ def compute_ptb_classification(model, dataset, sigma=0.2, batch_size=128):
         preds_all = model(x_all)
         preds_all = tf.reshape(preds_all, [2, batch_size_actual, n_features, -1])
 
-        # Lấy xác suất class đã chọn bằng one-hot
+        # Gather probability for the predicted class using one-hot selection
         num_classes = preds_all.shape[-1]
         one_hot = tf.one_hot(predicted_classes, depth=num_classes) 
         one_hot = tf.reshape(one_hot, [batch_size_actual, 1, num_classes]) 
@@ -85,11 +85,11 @@ def compute_ptb_classification(model, dataset, sigma=0.2, batch_size=128):
         Pi_minus = tf.reduce_sum(preds_all[1] * one_hot, axis=-1)
 
         
-        # Tính delta
+        # Compute delta
         P0_expanded = tf.expand_dims(P0, axis=1) 
         delta = tf.abs(Pi_plus - P0_expanded) + tf.abs(Pi_minus - P0_expanded)
 
-        # Cộng dồn
+        # Accumulate
         delta_sum = tf.reduce_sum(delta, axis=0)
         ptb += delta_sum.numpy() / 2
 
@@ -109,7 +109,7 @@ def compute_ptb_regression(model, dataset, sigma=0.2, batch_size=128):
         batch = dataset_tensor[start_idx:end_idx]
         batch_size_actual = end_idx - start_idx
 
-        # Dự đoán ban đầu
+        # Initial prediction
         predictions = model(batch)
         y0 = predictions
 
@@ -128,11 +128,11 @@ def compute_ptb_regression(model, dataset, sigma=0.2, batch_size=128):
         y_plus = preds_all[0]
         y_minus = preds_all[1]
 
-        # Mở rộng y0 để so sánh
+        # Expand y0 for comparison
         y0_expanded = tf.expand_dims(y0, axis=1)
         y0_expanded = tf.tile(y0_expanded, [1, n_features, 1])
 
-        # Tính delta
+        # Compute delta
         delta = tf.abs(y_plus - y0_expanded) + tf.abs(y_minus - y0_expanded)
         delta_sum = tf.reduce_sum(delta, axis=0)
         delta_sum = tf.reduce_mean(delta_sum, axis=-1)

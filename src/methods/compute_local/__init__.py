@@ -43,7 +43,7 @@ def compute_llm_regression(model, x, num_samples=100, perturb_std=0.1, kernel_wi
     weights = np.where(weights < 1e-10, 1e-10, weights)
 
     if np.sum(weights) == 0:
-        raise ValueError("Tổng trọng số bằng 0, hãy điều chỉnh perturb_std hoặc kernel_width.")
+        raise ValueError("Sum of weights is zero; adjust perturb_std or kernel_width.")
     
     reg = LinearRegression()
     reg.fit(X_perturbed, y_vals, sample_weight=weights)
@@ -59,7 +59,7 @@ def compute_c_hp_classification(model, image, layer_name='hidden'):
         outputs=[model.get_layer(layer_name).output, model.output]
     )
 
-    # Tính gradient
+    # Compute gradients
     with tf.GradientTape() as tape:
         tape.watch(inputs)
         conv_outputs, predictions = grad_model(inputs)
@@ -70,9 +70,9 @@ def compute_c_hp_classification(model, image, layer_name='hidden'):
     if grads is None:
         raise ValueError("Gradient is None")
 
-    # Kiểm tra và xử lý giá trị không hợp lệ
+    # Validate gradient values
     if tf.reduce_any(tf.math.is_nan(grads)) or tf.reduce_any(tf.math.is_inf(grads)):
-        raise ValueError("Gradient is NaN or Inf")
+        raise ValueError("Gradient contains NaN or Inf")
 
     c_hp = grads * tf.cast(conv_outputs, grads.dtype)
     c_hp_flat = tf.reshape(c_hp, [-1]).numpy()
@@ -95,10 +95,10 @@ def compute_c_hp_regression(model, image, layer_name='hidden'):
 
     grads = tape.gradient(loss, conv_outputs)
     if grads is None:
-        raise ValueError("Gradient is None, kiểm tra lại mô hình hoặc lớp trích xuất.")
+        raise ValueError("Gradient is None; check the model or extraction layer.")
 
     if tf.reduce_any(tf.math.is_nan(grads)) or tf.reduce_any(tf.math.is_inf(grads)):
-        raise ValueError("Gradient chứa NaN hoặc Inf, kiểm tra lại dữ liệu hoặc mô hình.")
+        raise ValueError("Gradient contains NaN or Inf; check the data or model.")
 
     c_hp = grads * tf.cast(conv_outputs, grads.dtype)
     c_hp_flat = tf.reshape(c_hp, [-1]).numpy()
